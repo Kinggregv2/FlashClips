@@ -10,7 +10,7 @@ Clips are saved as Flashback replays (`.zip`). Open one with Flashback (*Open re
 ## Folder layout
 
 ```
-<game dir>/clips/
+<game dir>/flashback/clips/
 ├── manual clips/
 │   └── clip_2026-11-21_14-03-22.zip
 └── kill clips/

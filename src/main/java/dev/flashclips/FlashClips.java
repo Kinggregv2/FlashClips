@@ -125,7 +125,7 @@ public class FlashClips implements ClientModInitializer {
     }
 
     public static Path clipsRoot() {
-        return FabricLoader.getInstance().getGameDir().resolve("clips");
+        return FabricLoader.getInstance().getGameDir().resolve("flashback").resolve("clips");
     }
 
     public static void message(Component text, ChatFormatting colour) {

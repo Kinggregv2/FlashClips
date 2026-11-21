@@ -7,6 +7,7 @@ import com.moulberry.flashback.record.FlashbackChunkMeta;
 import com.moulberry.flashback.record.FlashbackMeta;
 import com.moulberry.flashback.record.Recorder;
 import com.moulberry.flashback.record.ReplayMarker;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
@@ -334,7 +335,7 @@ public final class ClipManager {
             }
             Files.move(tmp, out, StandardCopyOption.REPLACE_EXISTING);
 
-            String rel = FlashClips.clipsRoot().getParent().relativize(out).toString();
+            String rel = FabricLoader.getInstance().getGameDir().relativize(out).toString();
             FlashClips.message(Component.literal("Saved " + (sel.lengthTicks() / 20) + "s clip: " + rel), ChatFormatting.GREEN);
             FlashClips.LOGGER.info("Saved clip {}", out);
         } catch (Throwable t) {

@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "FlashClips",
   "description": "Keeps a rolling Flashback replay buffer. Save the last 30 seconds with a keybind, and kills are clipped automatically.",
-  "authors": ["matej"],
+  "authors": ["Kinggregv2"],
   "license": "MIT",
   "environment": "client",
   "entrypoints": {

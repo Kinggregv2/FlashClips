@@ -7,3 +7,4 @@ out/
 .vscode/
 # Flashback's jar is not redistributed; copy it in yourself (see README)
 libs/*.jar
+logs/

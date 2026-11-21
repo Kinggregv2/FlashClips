@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.flashclips.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "AsyncReplaySaverAccessor",
+    "FlashbackMixin",
+    "LivingEntityMixin",
+    "RecorderMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

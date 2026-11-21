@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "flashclips",
+  "version": "${version}",
+  "name": "FlashClips",
+  "description": "Keeps a rolling Flashback replay buffer. Save the last 30 seconds with a keybind, and kills are clipped automatically.",
+  "authors": ["matej"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.flashclips.FlashClips"]
+  },
+  "mixins": ["flashclips.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": ">26.2 <26.4",
+    "java": ">=25",
+    "fabric-api": "*",
+    "flashback": ">=0.43.0"
+  }
+}

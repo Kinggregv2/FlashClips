@@ -45,6 +45,27 @@ public class ClipConfig {
             "(?<killer>[A-Za-z0-9_]{1,16}) (?:killed|slew|eliminated|murdered|destroyed|finished|obliterated) (?<victim>[A-Za-z0-9_]{1,16})"
     ));
 
+    // ---- screen recording (montage clips) ----
+
+    /** Keep a rolling screen recording and save a video when you pop a totem or get a kill. */
+    public boolean screenBufferEnabled = true;
+    /** Seconds of video kept from before the pop/kill. */
+    public double screenSecondsBefore = 1.0;
+    /** Seconds of video recorded after the pop/kill before the file is saved. */
+    public double screenSecondsAfter = 1.0;
+    /** A pop and a kill close together are merged into one video, up to this length. */
+    public double screenMaxClipSeconds = 8.0;
+    /** Recording frame rate. */
+    public int screenFps = 60;
+    /** Output height in pixels (width follows the window's aspect ratio). 0 = window resolution. */
+    public int screenHeight = 0;
+    /** "mp4" or "mkv". */
+    public String screenContainer = "mp4";
+    /** Encoder: "auto" tries NVIDIA, AMD, Intel, then CPU (libx264 / Media Foundation). Or name one, e.g. "h264_nvenc". */
+    public String screenEncoder = "auto";
+    /** Constant-quality level (lower = better quality, bigger files). ~18-23 is sensible. */
+    public int screenQuality = 20;
+
     public int bufferTicks() {
         return Math.max(1, bufferSeconds) * 20;
     }

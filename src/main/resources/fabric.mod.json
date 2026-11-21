@@ -11,6 +11,7 @@
     "client": ["dev.flashclips.FlashClips"]
   },
   "mixins": ["flashclips.mixins.json"],
+  "accessWidener": "flashclips.classtweaker",
   "depends": {
     "fabricloader": ">=0.18.0",
     "minecraft": ">26.2 <26.4",

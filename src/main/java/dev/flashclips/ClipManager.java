@@ -214,7 +214,7 @@ public final class ClipManager {
     private static void stage(Job job, Path recordFolder) {
         // Never throw here: an exception on Flashback's writer thread would break the recording.
         try {
-            Path staging = FlashClips.clipsRoot().resolve(".staging").resolve(UUID.randomUUID().toString());
+            Path staging = FlashClips.stagingRoot().resolve(UUID.randomUUID().toString());
             Files.createDirectories(staging);
 
             for (String name : job.selection().names()) {

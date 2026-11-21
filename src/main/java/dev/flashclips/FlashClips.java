@@ -72,6 +72,9 @@ public class FlashClips implements ClientModInitializer {
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
             if (!overlay) KillTracker.onGameMessage(message);
         });
+
+        migrateOldClips();
+        ScreenClips.init();
     }
 
     public static long ticks() {
@@ -98,6 +101,11 @@ public class FlashClips implements ClientModInitializer {
 
         KillTracker.tick(mc);
         ClipManager.tick();
+        ScreenClips.tick();
+    }
+
+    public static boolean isInWorld() {
+        return inWorld;
     }
 
     private static void ensureBufferRunning(Minecraft mc, boolean announce) {
@@ -124,8 +132,36 @@ public class FlashClips implements ClientModInitializer {
         return r != null && r == ownedRecorder;
     }
 
+    /** Inside Flashback's replay folder, so the clips show up (as folders) in Flashback's replay list. */
     public static Path clipsRoot() {
-        return FabricLoader.getInstance().getGameDir().resolve("flashback").resolve("clips");
+        return Flashback.getReplayFolder().resolve("clips");
+    }
+
+    /** Temporary files while a replay clip is assembled; kept out of the replay folder so it never shows in the list. */
+    public static Path stagingRoot() {
+        return Flashback.getDataDirectory().resolve("flashclips-staging");
+    }
+
+    /** Plain video clips for montages; deliberately outside Flashback's folders. */
+    public static Path montageRoot() {
+        String override = System.getProperty("flashclips.montageDir"); // used by the standalone encoder test
+        if (override != null) return Path.of(override);
+        return FabricLoader.getInstance().getGameDir().resolve("montage clips");
+    }
+
+    /** Older versions saved replay clips to flashback/clips; move them into the replay list once. */
+    private static void migrateOldClips() {
+        try {
+            Path old = FabricLoader.getInstance().getGameDir().resolve("flashback").resolve("clips");
+            Path now = clipsRoot();
+            if (java.nio.file.Files.isDirectory(old) && !old.equals(now) && !java.nio.file.Files.exists(now)) {
+                java.nio.file.Files.createDirectories(now.getParent());
+                java.nio.file.Files.move(old, now);
+                LOGGER.info("Moved old clips folder {} -> {}", old, now);
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Couldn't move old clips folder", e);
+        }
     }
 
     public static void message(Component text, ChatFormatting colour) {

@@ -5,7 +5,11 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "AsyncReplaySaverAccessor",
+    "ClientPacketListenerMixin",
     "FlashbackMixin",
+    "GuiRendererMixin",
+    "GuiRenderStateMixin",
+    "HudMixin",
     "LivingEntityMixin",
     "RecorderMixin"
   ],

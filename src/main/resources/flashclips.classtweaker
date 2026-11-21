@@ -1,0 +1,6 @@
+classTweaker v1 official
+
+# Lets the screen recorder find the chat layer in the GUI render state.
+accessible class net/minecraft/client/renderer/state/gui/GuiRenderState$Node
+accessible field net/minecraft/client/renderer/state/gui/GuiRenderState strata Ljava/util/List;
+accessible field net/minecraft/client/gui/GuiGraphicsExtractor guiRenderState Lnet/minecraft/client/renderer/state/gui/GuiRenderState;

@@ -207,5 +207,16 @@ public final class KillTracker {
         lastHitByMe.remove(key);
         FlashClips.LOGGER.info("Detected kill: {} ({})", name, uuid);
         ClipManager.requestKillClip(uuid, name);
+        ScreenClips.onEvent("kill");
+    }
+
+    /** Totem pop (entity event 35); called from ClientPacketListenerMixin on the main thread. */
+    public static void onTotemPop(Entity entity) {
+        Minecraft mc = Minecraft.getInstance();
+        if (!(entity instanceof Player p) || p == mc.player) return;
+        Long hit = lastHitByMe.get(p.getUUID());
+        if (hit != null && FlashClips.ticks() - hit <= FlashClips.CONFIG.killCreditSeconds * 20L) {
+            ScreenClips.onEvent("pop");
+        }
     }
 }

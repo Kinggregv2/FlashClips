@@ -3,7 +3,7 @@
   "id": "flashclips",
   "version": "${version}",
   "name": "FlashClips",
-  "description": "Keeps a rolling Flashback replay buffer. Save the last 30 seconds with a keybind, and kills are clipped automatically.",
+  "description": "Chat-free rolling screen recording. Saves a short mp4 when you pop a totem, get a kill, or press the clip key. Needs Flashback (uses its FFmpeg).",
   "authors": ["Kinggregv2"],
   "license": "MIT",
   "environment": "client",

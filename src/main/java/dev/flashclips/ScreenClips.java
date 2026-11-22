@@ -85,6 +85,15 @@ public final class ScreenClips {
         pending.labels.add(label);
     }
 
+    /** Clip key: save the last (before + after) seconds right away. */
+    public static void saveNow(String label) {
+        if (!isRecording()) return;
+        ClipConfig cfg = FlashClips.CONFIG;
+        long now = nowMs();
+        long length = (long) ((cfg.screenSecondsBefore + cfg.screenSecondsAfter) * 1000);
+        ScreenEncoder.requestSave(now - length, now, label, LocalDateTime.now());
+    }
+
     public static void tick() {
         if (pending != null && nowMs() >= pending.endMs) {
             Pending p = pending;

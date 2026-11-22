@@ -12,22 +12,6 @@ import java.util.List;
 public class ClipConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    /** How many seconds of history a clip contains (at least). */
-    public int bufferSeconds = 30;
-    /** How many seconds after a kill the kill clip is saved. */
-    public int killClipDelaySeconds = 3;
-    /**
-     * Length of Flashback's internal replay chunks. A clip always starts at a chunk boundary,
-     * so clips are between bufferSeconds and bufferSeconds + chunkSeconds long.
-     * Smaller = tighter clips but Flashback takes a world snapshot more often.
-     */
-    public int chunkSeconds = 10;
-    /** Automatically start a Flashback recording (the buffer) when you join a world/server. */
-    public boolean autoStartBuffer = true;
-    /** Delete chunks older than the buffer from the running buffer recording, so it never grows. */
-    public boolean trimOldChunks = true;
-    /** Throw the buffer recording away when you leave, instead of saving it as a normal Flashback replay. */
-    public boolean discardBufferOnLeave = true;
     /** A hit on a player only counts toward a kill if they die within this many seconds. */
     public int killCreditSeconds = 5;
     /** Players within this many blocks of a crystal / anchor you popped count as hit by you. */
@@ -65,14 +49,6 @@ public class ClipConfig {
     public String screenEncoder = "auto";
     /** Constant-quality level (lower = better quality, bigger files). ~18-23 is sensible. */
     public int screenQuality = 20;
-
-    public int bufferTicks() {
-        return Math.max(1, bufferSeconds) * 20;
-    }
-
-    public int chunkTicks() {
-        return Math.max(1, chunkSeconds) * 20;
-    }
 
     public static ClipConfig load(Path file) {
         ClipConfig config = null;

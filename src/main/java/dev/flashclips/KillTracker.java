@@ -206,7 +206,6 @@ public final class KillTracker {
         lastKillTick.put(key, now);
         lastHitByMe.remove(key);
         FlashClips.LOGGER.info("Detected kill: {} ({})", name, uuid);
-        ClipManager.requestKillClip(uuid, name);
         ScreenClips.onEvent("kill");
     }
 

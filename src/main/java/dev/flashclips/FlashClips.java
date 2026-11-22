@@ -26,8 +26,8 @@ import java.nio.file.Path;
  * or press the clip key. Uses the FFmpeg that ships inside Flashback for encoding.
  */
 public class FlashClips implements ClientModInitializer {
-    public static final String MOD_ID = "flashclips";
-    public static final Logger LOGGER = LoggerFactory.getLogger("FlashClips");
+    public static final String MOD_ID = "clips";
+    public static final Logger LOGGER = LoggerFactory.getLogger("Clips");
 
     public static ClipConfig CONFIG = new ClipConfig();
     public static KeyMapping clipKey;
@@ -37,10 +37,10 @@ public class FlashClips implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        CONFIG = ClipConfig.load(FabricLoader.getInstance().getConfigDir().resolve("flashclips.json"));
+        CONFIG = ClipConfig.load(FabricLoader.getInstance().getConfigDir());
 
         KeyMapping.Category category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(MOD_ID, "keybinds"));
-        clipKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.flashclips.clip",
+        clipKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.clips.clip",
                 InputConstants.Type.KEYBOARD, 296 /* F7 */, category));
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, mc) -> {
@@ -103,7 +103,7 @@ public class FlashClips implements ClientModInitializer {
         Minecraft mc = Minecraft.getInstance();
         mc.execute(() -> {
             if (mc.player != null) {
-                mc.player.sendSystemMessage(Component.literal("[FlashClips] ").withStyle(ChatFormatting.GOLD)
+                mc.player.sendSystemMessage(Component.literal("[Clips] ").withStyle(ChatFormatting.GOLD)
                         .append(text.copy().withStyle(colour)));
             } else {
                 LOGGER.info(text.getString());

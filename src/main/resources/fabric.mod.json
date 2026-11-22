@@ -1,22 +1,35 @@
 {
   "schemaVersion": 1,
-  "id": "flashclips",
+  "id": "clips",
   "version": "${version}",
-  "name": "FlashClips",
-  "description": "Chat-free rolling screen recording. Saves a short mp4 when you pop a totem, get a kill, or press the clip key. Needs Flashback (uses its FFmpeg).",
+  "name": "Clips",
+  "description": "Chat-free rolling screen recording with game audio. Saves a short mp4 when you pop a totem, get a kill, or press the clip key. Needs Flashback (uses its FFmpeg).",
   "authors": ["Kinggregv2"],
+  "contact": {
+    "sources": "https://github.com/Kinggregv2/FlashClips",
+    "issues": "https://github.com/Kinggregv2/FlashClips/issues"
+  },
   "license": "MIT",
+  "icon": "assets/clips/icon.png",
   "environment": "client",
   "entrypoints": {
-    "client": ["dev.flashclips.FlashClips"]
+    "client": ["dev.flashclips.FlashClips"],
+    "modmenu": ["dev.flashclips.ClipsModMenu"]
   },
-  "mixins": ["flashclips.mixins.json"],
-  "accessWidener": "flashclips.classtweaker",
+  "mixins": ["clips.mixins.json"],
+  "accessWidener": "clips.classtweaker",
   "depends": {
     "fabricloader": ">=0.18.0",
     "minecraft": ">26.2 <26.4",
     "java": ">=25",
     "fabric-api": "*",
     "flashback": ">=0.43.0"
+  },
+  "suggests": {
+    "modmenu": "*",
+    "cloth-config": "*"
+  },
+  "breaks": {
+    "flashclips": "*"
   }
 }

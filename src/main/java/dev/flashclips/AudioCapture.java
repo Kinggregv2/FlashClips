@@ -34,7 +34,11 @@ public final class AudioCapture {
     private record Chunk(long startNanos, byte[] pcm) {}
 
     private static final ArrayDeque<Chunk> chunks = new ArrayDeque<>();
-    private static final long KEEP_NANOS = 15_000_000_000L;
+    private static long keepNanos() {
+        ClipConfig c = FlashClips.CONFIG;
+        double s = Math.max(15, c.screenSecondsBefore + c.screenSecondsAfter + c.screenMaxClipSeconds + 3);
+        return (long) (s * 1e9);
+    }
 
     private static volatile boolean running = false;
     private static volatile boolean failed = false;
@@ -60,7 +64,7 @@ public final class AudioCapture {
             failed = true;
             return;
         }
-        thread = new Thread(AudioCapture::run, "FlashClips-Audio");
+        thread = new Thread(AudioCapture::run, "Clips-Audio");
         thread.setDaemon(true);
         thread.start();
     }
@@ -181,7 +185,7 @@ public final class AudioCapture {
         if (qpc100ns == 0 || Math.abs(now - start) > 2_000_000_000L) start = now - durationNanos;
         synchronized (chunks) {
             chunks.addLast(new Chunk(start, pcm));
-            while (!chunks.isEmpty() && now - chunks.peekFirst().startNanos() > KEEP_NANOS) chunks.pollFirst();
+            while (!chunks.isEmpty() && now - chunks.peekFirst().startNanos() > keepNanos()) chunks.pollFirst();
         }
     }
 

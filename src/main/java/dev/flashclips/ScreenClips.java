@@ -119,7 +119,7 @@ public final class ScreenClips {
             int w = main.width, h = main.height;
             if (captureTarget == null) {
                 GpuFormat depth = main.getDepthTexture() != null ? main.getDepthTexture().getFormat() : null;
-                captureTarget = new TextureTarget("flashclips_capture", w, h, main.getColorTexture().getFormat(), depth);
+                captureTarget = new TextureTarget("clips_capture", w, h, main.getColorTexture().getFormat(), depth);
             } else if (captureTarget.width != w || captureTarget.height != h) {
                 captureTarget.resize(w, h);
             }

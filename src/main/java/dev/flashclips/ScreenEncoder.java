@@ -57,7 +57,7 @@ public final class ScreenEncoder {
     private static final ArrayBlockingQueue<Item> frames = new ArrayBlockingQueue<>(6);
     private static final ConcurrentLinkedQueue<SaveRequest> saveRequests = new ConcurrentLinkedQueue<>();
     private static final ExecutorService WRITER = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "FlashClips-VideoWriter");
+        Thread t = new Thread(r, "Clips-VideoWriter");
         t.setDaemon(true);
         return t;
     });
@@ -94,7 +94,7 @@ public final class ScreenEncoder {
 
     private static synchronized void ensureThread() {
         if (thread != null) return;
-        thread = new Thread(ScreenEncoder::run, "FlashClips-ScreenEncoder");
+        thread = new Thread(ScreenEncoder::run, "Clips-ScreenEncoder");
         thread.setDaemon(true);
         thread.start();
     }

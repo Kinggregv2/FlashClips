@@ -52,23 +52,39 @@ public class ClipConfig {
     /** Constant-quality level (lower = better quality, bigger files). ~18-23 is sensible. */
     public int screenQuality = 20;
 
-    public static ClipConfig load(Path file) {
+    private transient Path file;
+
+    /** Loads config/clips.json (or the old config/flashclips.json once, if that's all there is). */
+    public static ClipConfig load(Path configDir) {
+        Path file = configDir.resolve("clips.json");
+        Path legacy = configDir.resolve("flashclips.json");
+        Path source = Files.exists(file) ? file : legacy;
         ClipConfig config = null;
         try {
-            if (Files.exists(file)) {
-                config = GSON.fromJson(Files.readString(file), ClipConfig.class);
+            if (Files.exists(source)) {
+                config = GSON.fromJson(Files.readString(source), ClipConfig.class);
             }
         } catch (Exception e) {
-            FlashClips.LOGGER.error("Failed to read {}, using defaults", file, e);
+            FlashClips.LOGGER.error("Failed to read {}, using defaults", source, e);
         }
         if (config == null) config = new ClipConfig();
         if (config.customKillMessagePatterns == null) config.customKillMessagePatterns = new ArrayList<>();
+        config.file = file;
+        config.save();
+        try {
+            Files.deleteIfExists(legacy);
+        } catch (Exception ignored) {
+        }
+        return config;
+    }
+
+    public void save() {
+        if (file == null) return;
         try {
             Files.createDirectories(file.getParent());
-            Files.writeString(file, GSON.toJson(config));
+            Files.writeString(file, GSON.toJson(this));
         } catch (Exception e) {
             FlashClips.LOGGER.error("Failed to write {}", file, e);
         }
-        return config;
     }
 }

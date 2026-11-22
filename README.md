@@ -1,6 +1,6 @@
-# FlashClips
+# Clips
 
-A client-side Fabric mod for Minecraft 26.3 that keeps an always-on **2 second screen recording** and saves short videos for montages.
+A client-side Fabric mod for Minecraft 26.3 (shown as **Clips** in Mod Menu) that keeps an always-on **2 second screen recording** and saves short videos for montages.
 
 - **Totem pop or kill:** 1 second after you pop someone's totem or kill someone, the last 2 seconds (1 s before, 1 s after) are saved as an `.mp4`.
 - **Clip key:** press **F7** (rebindable under Controls → FlashClips) to save the last 2 seconds right away.
@@ -32,9 +32,11 @@ A pop and a kill close together are merged into one longer video (up to 8 s), na
 - Kills come from vanilla death messages (`death.*` translations) and custom kill-message regexes. A kill also counts when a player dies within 5 s of being hit by you, or after standing near a crystal or anchor you set off.
 - Totem pops count when the player was hit by you within those same 5 seconds.
 
-## Config
+## Settings
 
-The config file is `config/flashclips.json`:
+In **Mod Menu → Clips → ⚙** (needs [Cloth Config](https://modrinth.com/mod/cloth-config)) you can turn the recording buffer on/off, set how many seconds before and after a pop/kill are kept (0–10 s each), and toggle game audio.
+
+Everything is also in `config/clips.json`:
 
 | key | default | meaning |
 |---|---|---|
@@ -54,7 +56,7 @@ The config file is `config/flashclips.json`:
 
 ## Building
 
-1. Copy `Flashback-0.43.6-for-MC26.3.jar` into `libs/`. It isn't redistributed here.
-2. Run `./gradlew build`. The jar ends up in `build/libs/`.
+1. Copy `Flashback-0.43.6-for-MC26.3.jar`, `modmenu-21.0.0.jar` and `cloth-config-fabric-26.3.159.jar` into `libs/` (compile-only, not redistributed here).
+2. Run `./gradlew build`. The jar ends up in `build/libs/clips-1.0.0.jar`.
 
 Requires Java 25, Flashback 0.43+ and Fabric API.

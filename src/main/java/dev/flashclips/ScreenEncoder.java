@@ -16,6 +16,7 @@ import org.bytedeco.ffmpeg.swscale.SwsContext;
 import org.bytedeco.ffmpeg.swscale.SwsFilter;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.DoublePointer;
+import org.bytedeco.javacpp.FloatPointer;
 import org.bytedeco.javacpp.IntPointer;
 import org.bytedeco.javacpp.PointerPointer;
 
@@ -323,6 +324,33 @@ public final class ScreenEncoder {
             AVRational ms = av_make_q(1, 1000);
             st.time_base(ms);
 
+            // Optional AAC audio track from the game-audio capture
+            boolean withAudio = FlashClips.CONFIG.screenAudio && AudioCapture.isRunning();
+            AVCodecContext ac = null;
+            AVStream ast = null;
+            if (withAudio) {
+                AVCodec aac = avcodec_find_encoder(AV_CODEC_ID_AAC);
+                ac = aac == null ? null : avcodec_alloc_context3(aac);
+                if (ac != null) {
+                    ac.sample_fmt(AV_SAMPLE_FMT_FLTP);
+                    ac.sample_rate(AudioCapture.RATE);
+                    ac.bit_rate(192_000);
+                    av_channel_layout_default(ac.ch_layout(), 2);
+                    ac.time_base(av_make_q(1, AudioCapture.RATE));
+                    if ((oc.oformat().flags() & AVFMT_GLOBALHEADER) != 0) ac.flags(ac.flags() | AV_CODEC_FLAG_GLOBAL_HEADER);
+                    if (avcodec_open2(ac, aac, (AVDictionary) null) >= 0) {
+                        ast = avformat_new_stream(oc, null);
+                        avcodec_parameters_from_context(ast.codecpar(), ac);
+                        ast.time_base(av_make_q(1, AudioCapture.RATE));
+                    } else {
+                        avcodec_free_context(ac);
+                        ac = null;
+                    }
+                }
+                if (ac == null) FlashClips.LOGGER.warn("AAC encoder unavailable; saving clip without sound");
+            }
+            audioCtx = ac;
+
             AVIOContext pb = new AVIOContext(null);
             check(avio_open(pb, path, AVIO_FLAG_WRITE), "open file");
             oc.pb(pb);
@@ -342,15 +370,77 @@ public final class ScreenEncoder {
                 check(av_interleaved_write_frame(oc, p), "write packet");
                 av_packet_unref(p);
             }
+
+            if (ac != null) {
+                long lastMs = packets.get(packets.size() - 1).pts();
+                long frameMs = Math.max(1, 1000 / Math.max(1, FlashClips.CONFIG.screenFps));
+                int totalFrames = (int) ((lastMs - first + frameMs) * AudioCapture.RATE / 1000);
+                byte[] pcm = AudioCapture.extract(first * 1_000_000L, totalFrames);
+                writeAudio(oc, ac, ast, p, pcm, totalFrames);
+            }
             check(av_write_trailer(oc), "write trailer");
             FlashClips.LOGGER.info("Saved montage clip {}", out);
         } catch (Throwable t) {
             FlashClips.LOGGER.error("Failed to write montage clip {}", out, t);
         } finally {
+            if (audioCtx != null) avcodec_free_context(audioCtx);
+            audioCtx = null;
             if (p != null) av_packet_free(p);
             if (opened) avio_closep(oc.pb());
             avformat_free_context(oc);
             avcodec_parameters_free(par);
+        }
+    }
+
+    /** Writer-thread only: the audio encoder of the clip being written (freed in write's finally). */
+    private static AVCodecContext audioCtx;
+
+    /** Encodes 16-bit stereo PCM to AAC and writes it as the clip's audio stream, starting at time 0. */
+    private static void writeAudio(AVFormatContext oc, AVCodecContext ac, AVStream ast, AVPacket p, byte[] pcm, int totalFrames) {
+        int frameSize = ac.frame_size() > 0 ? ac.frame_size() : 1024;
+        AVFrame af = av_frame_alloc();
+        try {
+            af.nb_samples(frameSize);
+            af.format(AV_SAMPLE_FMT_FLTP);
+            af.sample_rate(AudioCapture.RATE);
+            av_channel_layout_copy(af.ch_layout(), ac.ch_layout());
+            check(av_frame_get_buffer(af, 0), "alloc audio frame");
+
+            java.nio.ByteBuffer bb = java.nio.ByteBuffer.wrap(pcm).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+            float[] left = new float[frameSize];
+            float[] right = new float[frameSize];
+            for (int offset = 0; offset < totalFrames; offset += frameSize) {
+                int n = Math.min(frameSize, totalFrames - offset);
+                for (int i = 0; i < frameSize; i++) {
+                    if (i < n) {
+                        int idx = (offset + i) * AudioCapture.BYTES_PER_FRAME;
+                        left[i] = bb.getShort(idx) / 32768f;
+                        right[i] = bb.getShort(idx + 2) / 32768f;
+                    } else {
+                        left[i] = 0;
+                        right[i] = 0;
+                    }
+                }
+                check(av_frame_make_writable(af), "audio frame writable");
+                new FloatPointer(af.data(0)).capacity(frameSize).put(left, 0, frameSize);
+                new FloatPointer(af.data(1)).capacity(frameSize).put(right, 0, frameSize);
+                af.pts(offset);
+                check(avcodec_send_frame(ac, af), "encode audio");
+                drainAudio(oc, ac, ast, p);
+            }
+            avcodec_send_frame(ac, null);
+            drainAudio(oc, ac, ast, p);
+        } finally {
+            av_frame_free(af);
+        }
+    }
+
+    private static void drainAudio(AVFormatContext oc, AVCodecContext ac, AVStream ast, AVPacket p) {
+        while (avcodec_receive_packet(ac, p) >= 0) {
+            av_packet_rescale_ts(p, ac.time_base(), ast.time_base());
+            p.stream_index(ast.index());
+            check(av_interleaved_write_frame(oc, p), "write audio packet");
+            av_packet_unref(p);
         }
     }
 

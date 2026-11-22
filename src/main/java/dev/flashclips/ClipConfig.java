@@ -47,6 +47,8 @@ public class ClipConfig {
     public String screenContainer = "mp4";
     /** Encoder: "auto" tries NVIDIA, AMD, Intel, then CPU (libx264 / Media Foundation). Or name one, e.g. "h264_nvenc". */
     public String screenEncoder = "auto";
+    /** Record the game's sound into clips (Windows: captures only Minecraft's own audio). */
+    public boolean screenAudio = true;
     /** Constant-quality level (lower = better quality, bigger files). ~18-23 is sensible. */
     public int screenQuality = 20;
 

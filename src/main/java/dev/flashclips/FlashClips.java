@@ -65,6 +65,10 @@ public class FlashClips implements ClientModInitializer {
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
             if (!overlay) KillTracker.onGameMessage(message);
         });
+
+        if (CONFIG.screenBufferEnabled && CONFIG.screenAudio) {
+            AudioCapture.start();
+        }
     }
 
     public static long ticks() {

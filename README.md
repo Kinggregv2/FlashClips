@@ -4,6 +4,7 @@ A client-side Fabric mod for Minecraft 26.3 that keeps an always-on **2 second s
 
 - **Totem pop or kill:** 1 second after you pop someone's totem or kill someone, the last 2 seconds (1 s before, 1 s after) are saved as an `.mp4`.
 - **Clip key:** press **F7** (rebindable under Controls → FlashClips) to save the last 2 seconds right away.
+- **Game audio included.** Only Minecraft's own sound is recorded (plus in-game voice chat such as Simple Voice Chat). Discord, music players and other apps are not.
 - **No chat in the videos.** Chat still shows on your screen as normal. Everything else on the HUD (hotbar, hearts, crosshair…) is recorded.
 - **Not sorted by target.** All clips go into one folder, ready to drop into an editor.
 
@@ -22,7 +23,8 @@ A pop and a kill close together are merged into one longer video (up to 8 s), na
 2. The HUD is drawn into that texture a second time, without the chat layer. Chat is put in its own GUI layer so it can be skipped.
 3. The frame is read back from the GPU in the background.
 4. It's encoded to H.264 using NVIDIA NVENC, AMD AMF or Intel QSV if available, otherwise the CPU.
-5. The last few seconds of encoded video are kept in memory. Saving just copies those packets into an `.mp4`, without re-encoding.
+5. Game audio is captured with Windows' per-process audio loopback (WASAPI, like OBS's "application audio capture"). It doesn't change what you hear and adds no delay. Needs Windows 10 2004 or newer.
+6. The last few seconds of video and audio are kept in memory. Saving copies the video packets into an `.mp4` and encodes the matching audio to AAC.
 
 [Flashback](https://modrinth.com/mod/flashback) must be installed. FlashClips doesn't use Flashback's replay recording. It borrows Flashback's bundled FFmpeg and its GPU frame-readback code.
 
@@ -41,6 +43,7 @@ The config file is `config/flashclips.json`:
 | `screenMaxClipSeconds` | 8 | max length when several events are merged |
 | `screenFps` | 60 | recording frame rate |
 | `screenHeight` | 0 | output height in pixels. 0 = window resolution. Lower it if you lose FPS |
+| `screenAudio` | true | record game sound |
 | `screenContainer` | mp4 | `mp4` or `mkv` |
 | `screenEncoder` | auto | or force one, e.g. `h264_nvenc`, `libx264` |
 | `screenQuality` | 20 | constant quality. Lower is better and gives bigger files |
@@ -54,4 +57,4 @@ The config file is `config/flashclips.json`:
 1. Copy `Flashback-0.43.6-for-MC26.3.jar` into `libs/`. It isn't redistributed here.
 2. Run `./gradlew build`. The jar ends up in `build/libs/`.
 
-Requires Java 25, Flashback 0.43+ and Fabric API. Videos have no audio.
+Requires Java 25, Flashback 0.43+ and Fabric API.

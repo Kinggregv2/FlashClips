@@ -10,7 +10,6 @@
     "issues": "https://github.com/Kinggregv2/FlashClips/issues"
   },
   "license": "MIT",
-  "icon": "assets/clips/icon.png",
   "environment": "client",
   "entrypoints": {
     "client": ["dev.flashclips.FlashClips"],

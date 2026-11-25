@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
+    it.options.encoding = 'UTF-8'
+}
+
+dependencies {
+    // FFmpeg (bytedeco/javacpp) is loaded at runtime from the Flashback jar in the mods folder.
+    compileOnly files('../libs/Flashback-0.43.6-for-MC26.3.jar')
+}
+
+jar {
+    archiveFileName = 'clips-editor.jar'
+    manifest {
+        attributes 'Main-Class': 'dev.flashclips.editor.Main'
+    }
+}

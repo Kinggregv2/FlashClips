@@ -43,6 +43,7 @@ public final class ScreenClips {
         long startMs;
         long endMs;
         final LinkedHashSet<String> labels = new LinkedHashSet<>();
+        final java.util.List<ScreenEncoder.ClipEvent> events = new java.util.ArrayList<>();
         final LocalDateTime time = LocalDateTime.now();
     }
 
@@ -77,12 +78,14 @@ public final class ScreenClips {
         if (pending != null && now - before <= pending.endMs) {
             pending.endMs = Math.max(pending.endMs, Math.min(now + after, pending.startMs + max));
             pending.labels.add(label);
+            pending.events.add(new ScreenEncoder.ClipEvent(label, now));
             return;
         }
         pending = new Pending();
         pending.startMs = now - before;
         pending.endMs = now + after;
         pending.labels.add(label);
+        pending.events.add(new ScreenEncoder.ClipEvent(label, now));
     }
 
     /** Clip key: save the last (before + after) seconds right away. */
@@ -91,14 +94,15 @@ public final class ScreenClips {
         ClipConfig cfg = FlashClips.CONFIG;
         long now = nowMs();
         long length = (long) ((cfg.screenSecondsBefore + cfg.screenSecondsAfter) * 1000);
-        ScreenEncoder.requestSave(now - length, now, label, LocalDateTime.now());
+        ScreenEncoder.requestSave(now - length, now, label, LocalDateTime.now(),
+                java.util.List.of(new ScreenEncoder.ClipEvent(label, now)));
     }
 
     public static void tick() {
         if (pending != null && nowMs() >= pending.endMs) {
             Pending p = pending;
             pending = null;
-            ScreenEncoder.requestSave(p.startMs, p.endMs, String.join("+", p.labels), p.time);
+            ScreenEncoder.requestSave(p.startMs, p.endMs, String.join("+", p.labels), p.time, p.events);
         }
     }
 

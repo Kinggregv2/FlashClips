@@ -51,7 +51,7 @@ public final class ScreenEncoder {
 
     private record Packet(long pts, boolean key, byte[] data) {}
 
-    private record SaveRequest(long startMs, long endMs, String label, LocalDateTime time) {}
+    private record SaveRequest(long startMs, long endMs, String label, LocalDateTime time, List<ClipEvent> events) {}
 
     private static final DateTimeFormatter FILE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
     private static final ArrayBlockingQueue<Item> frames = new ArrayBlockingQueue<>(6);
@@ -86,10 +86,26 @@ public final class ScreenEncoder {
         }
     }
 
-    public static void requestSave(long startMs, long endMs, String label, LocalDateTime time) {
+    /** A pop / kill / manual save inside a clip; ms is on the same clock as frame timestamps. */
+    public record ClipEvent(String type, long ms) {}
+
+    public static void requestSave(long startMs, long endMs, String label, LocalDateTime time, List<ClipEvent> events) {
         if (failed) return;
         ensureThread();
-        saveRequests.add(new SaveRequest(startMs, endMs, label, time));
+        saveRequests.add(new SaveRequest(startMs, endMs, label, time, List.copyOf(events)));
+    }
+
+    /** JSON stored in the file's "comment" tag so the Clips editor knows where the pops/kills are. */
+    private static String eventsJson(List<ClipEvent> events, long firstMs) {
+        StringBuilder sb = new StringBuilder("{\"clips\":1,\"events\":[");
+        for (int i = 0; i < events.size(); i++) {
+            ClipEvent e = events.get(i);
+            if (i > 0) sb.append(',');
+            double t = Math.max(0, (e.ms() - firstMs) / 1000.0);
+            sb.append("{\"type\":\"").append(e.type().replaceAll("[^A-Za-z0-9_+]", ""))
+                    .append("\",\"t\":").append(String.format(java.util.Locale.ROOT, "%.3f", t)).append('}');
+        }
+        return sb.append("]}").toString();
     }
 
     private static synchronized void ensureThread() {
@@ -355,6 +371,9 @@ public final class ScreenEncoder {
             check(avio_open(pb, path, AVIO_FLAG_WRITE), "open file");
             oc.pb(pb);
             opened = true;
+            AVDictionary meta = new AVDictionary(null);
+            av_dict_set(meta, "comment", eventsJson(req.events(), packets.get(0).pts()), 0);
+            oc.metadata(meta);
             check(avformat_write_header(oc, (AVDictionary) null), "write header");
 
             long first = packets.get(0).pts();

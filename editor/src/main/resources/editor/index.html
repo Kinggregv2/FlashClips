@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clips Editor</title>
+<style>
+  /* Layout only; styling is left to you. */
+  body { font-family: system-ui, sans-serif; margin: 16px; }
+  section { margin-bottom: 16px; }
+  .row { display: grid; grid-template-columns: auto auto 240px 1fr; gap: 12px; align-items: center;
+         padding: 8px 0; border-top: 1px solid #ccc; }
+  .row video { width: 240px; display: block; }
+  .row.off { opacity: .45; }
+  .fields label { margin-right: 12px; }
+  input[type=number] { width: 5em; }
+  #player { width: 640px; max-width: 100%; display: block; }
+</style>
+</head>
+<body>
+<h1>Clips Editor</h1>
+
+<section id="global">
+  <label>Before pop/kill (s) <input id="gBefore" type="number" min="0" step="0.1" value="1"></label>
+  <label>After pop/kill (s) <input id="gAfter" type="number" min="0" step="0.1" value="1"></label>
+  <button id="applyAll">Apply to all clips</button>
+</section>
+
+<section id="musicBox">
+  <label>Music (mp3) <input id="music" type="file" accept=".mp3,audio/*"></label>
+  <span id="musicName"></span>
+  <label>Start music at (s) <input id="musicStart" type="number" min="0" step="0.1" value="0"></label>
+  <label>Music volume <input id="musicVol" type="range" min="0" max="100" value="80"></label>
+  <label>Game volume <input id="gameVol" type="range" min="0" max="100" value="40"></label>
+  <audio id="musicPreview"></audio>
+</section>
+
+<section>
+  <button id="preview">Preview montage</button>
+  <button id="stop">Stop</button>
+  <button id="export">Export</button>
+  <progress id="progress" max="1" value="0" hidden></progress>
+  <span id="status"></span>
+  <button id="reveal" hidden>Show in folder</button>
+  <video id="player" hidden></video>
+</section>
+
+<section>
+  <h2>Clips <small id="count"></small></h2>
+  <div id="clips"></div>
+</section>
+
+<script>
+const $ = id => document.getElementById(id);
+let clips = [];          // { info, use, before, after }
+let musicUrl = null, musicReady = false, playing = null;
+
+const first = c => c.info.events[0].t;
+const last = c => c.info.events[c.info.events.length - 1].t;
+const segment = c => {
+  const start = Math.max(0, first(c) - c.before);
+  const end = Math.min(c.info.duration, last(c) + c.after);
+  return [start, Math.max(start, end)];
+};
+const fmt = n => n.toFixed(2);
+const clipUrl = c => '/clip?name=' + encodeURIComponent(c.info.name);
+
+async function load() {
+  const d = await (await fetch('/api/defaults')).json();
+  $('gBefore').value = d.before;
+  $('gAfter').value = d.after;
+  const list = await (await fetch('/api/clips')).json();
+  // Each clip starts out using its full length; shorten it per clip or with "Apply to all clips".
+  clips = list.map(info => {
+    const c = { info, use: true };
+    c.before = +first(c).toFixed(2);
+    c.after = +(info.duration - last(c)).toFixed(2);
+    return c;
+  });
+  render();
+}
+
+function render() {
+  const box = $('clips');
+  box.innerHTML = '';
+  $('count').textContent = `(${clips.filter(c => c.use).length} of ${clips.length} used)`;
+  clips.forEach((c, i) => {
+    const [s, e] = segment(c);
+    const ev = c.info.events.map(x => `${x.type} @ ${fmt(x.t)}s`).join(', ');
+    const row = document.createElement('div');
+    row.className = 'row' + (c.use ? '' : ' off');
+    row.innerHTML = `
+      <input type="checkbox" ${c.use ? 'checked' : ''} title="Use this clip">
+      <span><button data-a="up">↑</button><button data-a="down">↓</button></span>
+      <video preload="metadata" muted src="${clipUrl(c)}#t=${fmt(s)},${fmt(e)}"></video>
+      <div>
+        <div><b>${c.info.name}</b></div>
+        <div>${ev}${c.info.estimated ? ' (estimated: clip was saved before event times were stored)' : ''}</div>
+        <div class="fields">
+          <label>Before <input data-f="before" type="number" min="0" step="0.1" max="${fmt(first(c))}" value="${c.before}"></label>
+          <label>After <input data-f="after" type="number" min="0" step="0.1" max="${fmt(c.info.duration - last(c))}" value="${c.after}"></label>
+          <span>uses ${fmt(s)}–${fmt(e)}s (${fmt(e - s)}s of ${fmt(c.info.duration)}s)</span>
+          <button data-a="play">Play cut</button>
+        </div>
+      </div>`;
+    row.querySelector('input[type=checkbox]').onchange = ev2 => { c.use = ev2.target.checked; render(); };
+    row.querySelectorAll('input[data-f]').forEach(inp => inp.onchange = () => {
+      c[inp.dataset.f] = Math.max(0, +inp.value || 0); render();
+    });
+    row.querySelector('[data-a=up]').onclick = () => { if (i > 0) { [clips[i - 1], clips[i]] = [clips[i], clips[i - 1]]; render(); } };
+    row.querySelector('[data-a=down]').onclick = () => { if (i < clips.length - 1) { [clips[i + 1], clips[i]] = [clips[i], clips[i + 1]]; render(); } };
+    const v = row.querySelector('video');
+    row.querySelector('[data-a=play]').onclick = () => {
+      v.muted = false; v.currentTime = s; v.play();
+      v.ontimeupdate = () => { if (v.currentTime >= e) v.pause(); };
+    };
+    box.appendChild(row);
+  });
+}
+
+$('applyAll').onclick = () => {
+  const b = Math.max(0, +$('gBefore').value || 0), a = Math.max(0, +$('gAfter').value || 0);
+  clips.forEach(c => { c.before = b; c.after = a; });
+  render();
+};
+
+$('music').onchange = async () => {
+  const f = $('music').files[0];
+  musicReady = false;
+  if (!f) return;
+  if (musicUrl) URL.revokeObjectURL(musicUrl);
+  musicUrl = URL.createObjectURL(f);
+  $('musicPreview').src = musicUrl;
+  $('musicName').textContent = 'Uploading…';
+  const r = await fetch('/api/music?name=' + encodeURIComponent(f.name), { method: 'POST', body: f });
+  musicReady = r.ok;
+  $('musicName').textContent = r.ok ? f.name : 'Upload failed';
+};
+
+// ---- preview: plays the cuts back to back with the music, like the export will sound
+function stopPreview() {
+  playing = null;
+  $('player').pause();
+  $('musicPreview').pause();
+}
+$('stop').onclick = stopPreview;
+$('preview').onclick = async () => {
+  stopPreview();
+  const used = clips.filter(c => c.use);
+  if (!used.length) return;
+  const token = playing = {};
+  const p = $('player'), m = $('musicPreview');
+  p.hidden = false;
+  if (musicUrl && musicReady) {
+    m.currentTime = +$('musicStart').value || 0;
+    m.volume = +$('musicVol').value / 100;
+    m.play();
+  }
+  for (const c of used) {
+    if (playing !== token) return;
+    const [s, e] = segment(c);
+    p.src = clipUrl(c);
+    p.volume = +$('gameVol').value / 100;
+    await new Promise(res => p.onloadedmetadata = res);
+    p.currentTime = s;
+    await p.play();
+    await new Promise(res => { p.ontimeupdate = () => { if (p.currentTime >= e || playing !== token) res(); }; p.onended = res; });
+  }
+  if (playing === token) stopPreview();
+};
+
+// ---- export
+$('export').onclick = async () => {
+  stopPreview();
+  const used = clips.filter(c => c.use);
+  if (!used.length) { $('status').textContent = 'Select at least one clip.'; return; }
+  const opts = new URLSearchParams({
+    useMusic: musicReady ? '1' : '0',
+    musicStart: $('musicStart').value || '0',
+    musicVolume: (+$('musicVol').value / 100).toString(),
+    gameVolume: (+$('gameVol').value / 100).toString(),
+  });
+  const lines = [opts.toString(), ...used.map(c => { const [s, e] = segment(c); return `${c.info.name}\t${s}\t${e}`; })];
+  const r = await (await fetch('/api/export', { method: 'POST', body: lines.join('\n') })).json();
+  if (!r.ok) { $('status').textContent = r.error; return; }
+  $('export').disabled = true;
+  $('reveal').hidden = true;
+  $('progress').hidden = false;
+  poll();
+};
+
+async function poll() {
+  const st = await (await fetch('/api/status')).json();
+  $('progress').value = st.progress;
+  $('status').textContent = st.message;
+  if (st.state === 'running') { setTimeout(poll, 400); return; }
+  $('export').disabled = false;
+  $('progress').hidden = true;
+  $('reveal').hidden = st.state !== 'done';
+}
+$('reveal').onclick = () => fetch('/api/reveal', { method: 'POST' });
+
+setInterval(() => fetch('/api/ping').catch(() => {}), 10000);
+load();
+</script>
+</body>
+</html>
